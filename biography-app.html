@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biography App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #eee;
+            border: none;
+            cursor: pointer;
+            flex-grow: 1;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .tab.active {
+            background-color: #3498db;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="date"], textarea, input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .bio-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #fff;
+        }
+        .bio-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .search-box {
+            margin-bottom: 20px;
+        }
+        .bio-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        .bio-actions button {
+            flex: 1;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+        }
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+        .share-btn {
+            background-color: #2ecc71;
+        }
+        .share-btn:hover {
+            background-color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Biography App</h1>
+        
+        <div class="tabs">
+            <button class="tab active" data-tab="create">Create Biography</button>
+            <button class="tab" data-tab="view">View Biographies</button>
+        </div>
+        
+        <div id="create-tab" class="tab-content active">
+            <form id="bio-form">
+                <div class="form-group">
+                    <label for="name">Full Name:</label>
+                    <input type="text" id="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="birth-date">Date of Birth:</label>
+                    <input type="date" id="birth-date">
+                </div>
+                
+                <div class="form-group">
+                    <label for="birthplace">Birthplace:</label>
+                    <input type="text" id="birthplace">
+                </div>
+                
+                <div class="form-group">
+                    <label for="bio-image">Upload Photo:</label>
+                    <input type="file" id="bio-image" accept="image/*">
+                    <div id="image-preview"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="education">Education:</label>
+                    <textarea id="education"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="achievements">Achievements:</label>
+                    <textarea id="achievements"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="life-story">Life Story:</label>
+                    <textarea id="life-story"></textarea>
+                </div>
+                
+                <button type="submit">Save Biography</button>
+            </form>
+        </div>
+        
+        <div id="view-tab" class="tab-content">
+            <div class="search-box">
+                <input type="text" id="search" placeholder="Search biographies...">
+            </div>
+            
+            <div id="biographies-container">
+                <!-- Biographies will be displayed here -->
+                <p id="no-bios-message">No biographies saved yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and tab contents
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+                
+                if (tabId === 'view') {
+                    displayBiographies();
+                }
+            });
+        });
+        
+        // Handle image preview
+        document.getElementById('bio-image').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('image-preview');
+                    preview.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; margin-top: 10px;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Form submission
+        document.getElementById('bio-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Get form values
+            const name = document.getElementById('name').value;
+            const birthDate = document.getElementById('birth-date').value;
+            const birthplace = document.getElementById('birthplace').value;
+            const education = document.getElementById('education').value;
+            const achievements = document.getElementById('achievements').value;
+            const lifeStory = document.getElementById('life-story').value;
+            
+            // Get image if available
+            let imageData = null;
+            const imagePreview = document.querySelector('#image-preview img');
+            if (imagePreview) {
+                imageData = imagePreview.src;
+            }
+            
+            // Create biography object
+            const biography = {
+                id: Date.now(), // Use timestamp as unique ID
+                name,
+                birthDate,
+                birthplace,
+                education,
+                achievements,
+                lifeStory,
+                imageData,
+                createdAt: new Date().toISOString()
+            };
+            
+            // Save to localStorage
+            saveBiography(biography);
+            
+            // Reset form
+            document.getElementById('bio-form').reset();
+            document.getElementById('image-preview').innerHTML = '';
+            
+            alert('Biography saved successfully!');
+        });
+        
+        // Search functionality
+        document.getElementById('search').addEventListener('input', function() {
+            displayBiographies();
+        });
+        
+        // Save biography to localStorage
+        function saveBiography(biography) {
+            // Get existing biographies
+            const biographies = getBiographies();
+            
+            // Add new biography
+            biographies.push(biography);
+            
+            // Save back to localStorage
+            localStorage.setItem('biographies', JSON.stringify(biographies));
+        }
+        
+        // Get all biographies from localStorage
+        function getBiographies() {
+            const biographiesJSON = localStorage.getItem('biographies');
+            return biographiesJSON ? JSON.parse(biographiesJSON) : [];
+        }
+        
+        // Display biographies
+        function displayBiographies() {
+            const container = document.getElementById('biographies-container');
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            const biographies = getBiographies();
+            
+            if (biographies.length === 0) {
+                container.innerHTML = '<p id="no-bios-message">No biographies saved yet.</p>';
+                return;
+            }
+            
+            // Filter biographies based on search term
+            const filteredBios = biographies.filter(bio => 
+                bio.name.toLowerCase().includes(searchTerm) ||
+                bio.birthplace.toLowerCase().includes(searchTerm) ||
+                bio.education.toLowerCase().includes(searchTerm) ||
+                bio.achievements.toLowerCase().includes(searchTerm) ||
+                bio.lifeStory.toLowerCase().includes(searchTerm)
+            );
+            
+            if (filteredBios.length === 0) {
+                container.innerHTML = '<p>No matching biographies found.</p>';
+                return;
+            }
+            
+            // Sort biographies by creation date (newest first)
+            filteredBios.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+            // Generate HTML for biographies
+            let html = '';
+            filteredBios.forEach(bio => {
+                html += `
+                    <div class="bio-card" data-id="${bio.id}">
+                        <h2>${bio.name}</h2>
+                        ${bio.imageData ? `<img src="${bio.imageData}" class="bio-image" alt="${bio.name}">` : ''}
+                        ${bio.birthDate ? `<p><strong>Born:</strong> ${formatDate(bio.birthDate)}</p>` : ''}
+                        ${bio.birthplace ? `<p><strong>Birthplace:</strong> ${bio.birthplace}</p>` : ''}
+                        
+                        ${bio.education ? `
+                            <h3>Education</h3>
+                            <p>${bio.education}</p>
+                        ` : ''}
+                        
+                        ${bio.achievements ? `
+                            <h3>Achievements</h3>
+                            <p>${bio.achievements}</p>
+                        ` : ''}
+                        
+                        ${bio.lifeStory ? `
+                            <h3>Life Story</h3>
+                            <p>${bio.lifeStory}</p>
+                        ` : ''}
+                        
+                        <div class="bio-actions">
+                            <button class="share-btn" onclick="shareBiography(${bio.id})">Share</button>
+                            <button class="delete-btn" onclick="deleteBiography(${bio.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Format date
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+        
+        // Delete biography
+        function deleteBiography(id) {
+            if (confirm('Are you sure you want to delete this biography?')) {
+                let biographies = getBiographies();
+                biographies = biographies.filter(bio => bio.id !== id);
+                localStorage.setItem('biographies', JSON.stringify(biographies));
+                displayBiographies();
+            }
+        }
+        
+        // Share biography
+        function shareBiography(id) {
+            const biographies = getBiographies();
+            const biography = biographies.find(bio => bio.id === id);
+            
+            if (biography) {
+                // Create shareable text
+                const text = `Biography of ${biography.name}\n\n` +
+                             `Born: ${formatDate(biography.birthDate)}\n` +
+                             `Birthplace: ${biography.birthplace}\n\n` +
+                             `Education: ${biography.education}\n\n` +
+                             `Achievements: ${biography.achievements}\n\n` +
+                             `Life Story: ${biography.lifeStory}`;
+                
+                // Try to use the Web Share API if available
+                if (navigator.share) {
+                    navigator.share({
+                        title: `Biography of ${biography.name}`,
+                        text: text
+                    }).catch(err => {
+                        // Fallback if sharing fails
+                        fallbackShare(text);
+                    });
+                } else {
+                    // Fallback for browsers that don't support Web Share API
+                    fallbackShare(text);
+                }
+            }
+        }
+        
+        // Fallback sharing method
+        function fallbackShare(text) {
+            // Create a temporary textarea element
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';  // Prevent scrolling to bottom
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            
+            try {
+                // Copy text to clipboard
+                document.execCommand('copy');
+                alert('Biography copied to clipboard! You can now paste it into an email or message.');
+            } catch (err) {
+                alert('Failed to copy biography. Please try again.');
+            }
+            
+            document.body.removeChild(textarea);
+        }
+    </script>
+</body>
+</html>
